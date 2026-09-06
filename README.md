@@ -4,7 +4,7 @@ local playerGui = player:WaitForChild("PlayerGui")
 
 -- IDs dos ícones (no formato rbxassetid://ID)
 local ICON_TRADE = "rbxassetid://80446720359667" -- ícone ao lado de "Enviar trade"
-local ICON_COIN = "rbxassetid://0000000000" -- troque pelo ID do ícone da moeda quando mandar
+local ICON_COIN = ICON_TRADE -- usando o mesmo por enquanto; troque quando mandar o ícone da moeda
 
 --============================================================
 -- ScreenGui base
@@ -64,7 +64,7 @@ end
 --============================================================
 local sendButton = Instance.new("TextButton")
 sendButton.Size = UDim2.new(0, 90, 0, 32)
-sendButton.Position = UDim2.new(0.5, -45, 0.5, -16)
+sendButton.Position = UDim2.new(0, 20, 1, -52)
 sendButton.BackgroundColor3 = Color3.fromRGB(235, 235, 235)
 sendButton.BorderSizePixel = 0
 sendButton.Text = ""
