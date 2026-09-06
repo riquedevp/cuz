@@ -240,23 +240,55 @@ local function createFriendRow(friendInfo)
     return row
 end
 
-local function renderList(filterText)
+local function renderFriendsList()
     clearList()
-    filterText = (filterText or ""):lower()
-
     local shown = 0
     for _, friendInfo in ipairs(allFriends) do
-        if filterText == "" or friendInfo.Name:lower():find(filterText, 1, true) then
-            createFriendRow(friendInfo)
-            shown += 1
-        end
+        createFriendRow(friendInfo)
+        shown += 1
     end
-
     listFrame.CanvasSize = UDim2.new(0, 0, 0, shown * 46)
 end
 
+-- Busca um usuário real do Roblox pelo nome EXATO digitado
+local function searchUserByName(name)
+    clearList()
+    friendsTitle.Text = "Buscando..."
+
+    local userId
+    local ok = pcall(function()
+        userId = Players:GetUserIdFromNameAsync(name)
+    end)
+
+    if not ok or not userId then
+        friendsTitle.Text = "Nenhum usuário encontrado"
+        listFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+        return
+    end
+
+    createFriendRow({ Name = name, UserId = userId })
+    friendsTitle.Text = "Resultado da busca"
+    listFrame.CanvasSize = UDim2.new(0, 0, 0, 46)
+end
+
+-- Debounce: espera parar de digitar antes de buscar (evita spam de requests)
+local searchToken = 0
 searchBox:GetPropertyChangedSignal("Text"):Connect(function()
-    renderList(searchBox.Text)
+    local text = searchBox.Text
+
+    if text == "" then
+        friendsTitle.Text = "Minhas amizades (" .. #allFriends .. ")"
+        renderFriendsList()
+        return
+    end
+
+    searchToken += 1
+    local myToken = searchToken
+    task.wait(0.4) -- espera meio segundo de pausa na digitação
+    if myToken ~= searchToken then return end -- usuário continuou digitando, cancela essa busca antiga
+    if searchBox.Text ~= text then return end
+
+    searchUserByName(text)
 end)
 
 --============================================================
@@ -268,7 +300,7 @@ sendButton.MouseButton1Click:Connect(function()
     if #allFriends == 0 then
         loadFriends()
     end
-    renderList("")
+    renderFriendsList()
 end)
 
 closeBtn.MouseButton1Click:Connect(function()
