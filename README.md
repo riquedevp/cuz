@@ -381,10 +381,10 @@ local function renderFriendsList()
     local rows = 0
 
     createSectionLabel("Minhas amizades (" .. #allFriends .. ")")
-    rows += 1
+    rows = rows + 1
     for _, friendInfo in ipairs(allFriends) do
         createFriendRow(friendInfo)
-        rows += 1
+        rows = rows + 1
     end
 
     listFrame.CanvasSize = UDim2.new(0, 0, 0, rows * 45)
@@ -423,7 +423,7 @@ searchBox:GetPropertyChangedSignal("Text"):Connect(function()
         return
     end
 
-    searchToken += 1
+    searchToken = searchToken + 1
     local myToken = searchToken
     task.wait(0.4) -- espera meio segundo de pausa na digitação
     if myToken ~= searchToken then return end -- usuário continuou digitando, cancela essa busca antiga
