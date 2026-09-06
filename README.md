@@ -10,6 +10,51 @@ screenGui.Name = "TradeUI"
 screenGui.ResetOnSpawn = false
 screenGui.Parent = playerGui
 
+local UserInputService = game:GetService("UserInputService")
+
+--============================================================
+-- Função genérica para tornar um Frame/TextButton arrastável
+--============================================================
+local function makeDraggable(guiObject, dragHandle)
+    dragHandle = dragHandle or guiObject
+    local dragging = false
+    local dragStart, startPos
+    local moved = false
+
+    dragHandle.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            moved = false
+            dragStart = input.Position
+            startPos = guiObject.Position
+
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+
+    dragHandle.InputChanged:Connect(function(input)
+        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            local delta = input.Position - dragStart
+            if delta.Magnitude > 3 then
+                moved = true
+            end
+            guiObject.Position = UDim2.new(
+                startPos.X.Scale, startPos.X.Offset + delta.X,
+                startPos.Y.Scale, startPos.Y.Offset + delta.Y
+            )
+        end
+    end)
+
+    -- retorna uma função pra saber se o último input foi um "arraste" (pra não disparar clique junto)
+    return function()
+        return moved
+    end
+end
+
 --============================================================
 -- Botão "Enviar"
 --============================================================
@@ -59,6 +104,8 @@ sendButton.MouseLeave:Connect(function()
     sendButton.BackgroundColor3 = Color3.fromRGB(235, 235, 235)
 end)
 
+local sendButtonWasMoved = makeDraggable(sendButton)
+
 --============================================================
 -- Painel de busca (aparece ao clicar em "Enviar")
 --============================================================
@@ -77,10 +124,30 @@ panelShadowStroke.Color = Color3.fromRGB(225, 225, 225)
 panelShadowStroke.Thickness = 1
 panelShadowStroke.Parent = panel
 
+-- Barra de arrastar no topo do painel
+local dragBar = Instance.new("Frame")
+dragBar.Name = "DragBar"
+dragBar.Size = UDim2.new(1, 0, 0, 28)
+dragBar.Position = UDim2.new(0, 0, 0, 0)
+dragBar.BackgroundTransparency = 1
+dragBar.Parent = panel
+
+local dragDots = Instance.new("TextLabel")
+dragDots.Size = UDim2.new(1, 0, 1, 0)
+dragDots.BackgroundTransparency = 1
+dragDots.Text = "⋯"
+dragDots.TextColor3 = Color3.fromRGB(180, 180, 180)
+dragDots.Font = Enum.Font.GothamBold
+dragDots.TextSize = 20
+dragDots.Rotation = 90
+dragDots.Parent = dragBar
+
+makeDraggable(panel, dragBar)
+
 -- Caixa de busca
 local searchBox = Instance.new("TextBox")
 searchBox.Size = UDim2.new(1, -32, 0, 40)
-searchBox.Position = UDim2.new(0, 16, 0, 16)
+searchBox.Position = UDim2.new(0, 16, 0, 32)
 searchBox.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 searchBox.PlaceholderText = "Busca por nome de usuário"
 searchBox.PlaceholderColor3 = Color3.fromRGB(150, 150, 150)
@@ -108,7 +175,7 @@ searchStroke.Parent = searchBox
 -- Título "Minhas amizades (N)"
 local friendsTitle = Instance.new("TextLabel")
 friendsTitle.Size = UDim2.new(1, -32, 0, 24)
-friendsTitle.Position = UDim2.new(0, 16, 0, 68)
+friendsTitle.Position = UDim2.new(0, 16, 0, 84)
 friendsTitle.BackgroundTransparency = 1
 friendsTitle.Text = "Minhas amizades (0)"
 friendsTitle.TextColor3 = Color3.fromRGB(30, 30, 30)
@@ -119,8 +186,8 @@ friendsTitle.Parent = panel
 
 -- Lista rolável de amigos
 local listFrame = Instance.new("ScrollingFrame")
-listFrame.Size = UDim2.new(1, -16, 1, -104)
-listFrame.Position = UDim2.new(0, 8, 0, 96)
+listFrame.Size = UDim2.new(1, -16, 1, -120)
+listFrame.Position = UDim2.new(0, 8, 0, 112)
 listFrame.BackgroundTransparency = 1
 listFrame.BorderSizePixel = 0
 listFrame.ScrollBarThickness = 4
@@ -133,8 +200,8 @@ listLayout.Parent = listFrame
 
 -- Botão de fechar
 local closeBtn = Instance.new("TextButton")
-closeBtn.Size = UDim2.new(0, 28, 0, 28)
-closeBtn.Position = UDim2.new(1, -40, 0, 12)
+closeBtn.Size = UDim2.new(0, 24, 0, 24)
+closeBtn.Position = UDim2.new(1, -32, 0, 2)
 closeBtn.BackgroundTransparency = 1
 closeBtn.Text = "X"
 closeBtn.Font = Enum.Font.GothamBold
@@ -295,6 +362,7 @@ end)
 -- Abrir / Fechar painel
 --============================================================
 sendButton.MouseButton1Click:Connect(function()
+    if sendButtonWasMoved() then return end -- não abre o painel se o clique foi na verdade um arraste
     panel.Visible = true
     searchBox.Text = ""
     if #allFriends == 0 then
