@@ -148,9 +148,9 @@ makeDraggable(panel, dragBar)
 local searchBox = Instance.new("TextBox")
 searchBox.Size = UDim2.new(1, -32, 0, 40)
 searchBox.Position = UDim2.new(0, 16, 0, 32)
-searchBox.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+searchBox.BackgroundColor3 = Color3.fromRGB(245, 246, 250)
 searchBox.PlaceholderText = "Busca por nome de usuário"
-searchBox.PlaceholderColor3 = Color3.fromRGB(150, 150, 150)
+searchBox.PlaceholderColor3 = Color3.fromRGB(150, 150, 155)
 searchBox.Text = ""
 searchBox.TextColor3 = Color3.fromRGB(30, 30, 30)
 searchBox.Font = Enum.Font.Gotham
@@ -168,26 +168,27 @@ searchCorner.CornerRadius = UDim.new(0, 8)
 searchCorner.Parent = searchBox
 
 local searchStroke = Instance.new("UIStroke")
-searchStroke.Color = Color3.fromRGB(88, 101, 242)
-searchStroke.Thickness = 1.5
+searchStroke.Color = Color3.fromRGB(225, 226, 232)
+searchStroke.Thickness = 1
 searchStroke.Parent = searchBox
 
--- Título "Minhas amizades (N)"
+-- Mensagem de status da busca (só aparece durante/depois de uma busca)
 local friendsTitle = Instance.new("TextLabel")
-friendsTitle.Size = UDim2.new(1, -32, 0, 24)
-friendsTitle.Position = UDim2.new(0, 16, 0, 84)
+friendsTitle.Size = UDim2.new(1, -32, 0, 20)
+friendsTitle.Position = UDim2.new(0, 16, 0, 80)
 friendsTitle.BackgroundTransparency = 1
-friendsTitle.Text = "Minhas amizades (0)"
-friendsTitle.TextColor3 = Color3.fromRGB(30, 30, 30)
-friendsTitle.Font = Enum.Font.GothamBold
-friendsTitle.TextSize = 15
+friendsTitle.Text = ""
+friendsTitle.Visible = false
+friendsTitle.TextColor3 = Color3.fromRGB(120, 120, 120)
+friendsTitle.Font = Enum.Font.Gotham
+friendsTitle.TextSize = 13
 friendsTitle.TextXAlignment = Enum.TextXAlignment.Left
 friendsTitle.Parent = panel
 
 -- Lista rolável de amigos
 local listFrame = Instance.new("ScrollingFrame")
-listFrame.Size = UDim2.new(1, -16, 1, -120)
-listFrame.Position = UDim2.new(0, 8, 0, 112)
+listFrame.Size = UDim2.new(1, -16, 1, -96)
+listFrame.Position = UDim2.new(0, 8, 0, 88)
 listFrame.BackgroundTransparency = 1
 listFrame.BorderSizePixel = 0
 listFrame.ScrollBarThickness = 4
@@ -221,14 +222,11 @@ local function loadFriends()
     end)
 
     if not success or not friendPages then
-        friendsTitle.Text = "Minhas amizades (0)"
         return
     end
 
-    local count = 0
     local page = friendPages:GetCurrentPage()
     for _, friendData in ipairs(page) do
-        count += 1
         table.insert(allFriends, {
             Name = friendData.Username,
             UserId = friendData.Id,
@@ -240,28 +238,40 @@ local function loadFriends()
         if not ok then break end
         if friendPages.IsFinished then break end
         for _, friendData in ipairs(friendPages:GetCurrentPage()) do
-            count += 1
             table.insert(allFriends, {
                 Name = friendData.Username,
                 UserId = friendData.Id,
             })
         end
     end
-
-    friendsTitle.Text = "Minhas amizades (" .. count .. ")"
 end
 
 --============================================================
 -- Renderiza a lista (com filtro opcional de busca)
 --============================================================
 local onFriendSelected -- callback definido mais abaixo
+local recentSelections = {} -- pessoas que você já clicou nesta sessão
 
 local function clearList()
     for _, child in ipairs(listFrame:GetChildren()) do
-        if child:IsA("TextButton") then
+        if child:IsA("TextButton") or (child:IsA("TextLabel") and child.Name == "SectionLabel") then
             child:Destroy()
         end
     end
+end
+
+local function createSectionLabel(text)
+    local lbl = Instance.new("TextLabel")
+    lbl.Name = "SectionLabel"
+    lbl.Size = UDim2.new(1, 0, 0, 22)
+    lbl.BackgroundTransparency = 1
+    lbl.Text = text
+    lbl.TextColor3 = Color3.fromRGB(20, 20, 20)
+    lbl.Font = Enum.Font.GothamBold
+    lbl.TextSize = 14
+    lbl.TextXAlignment = Enum.TextXAlignment.Left
+    lbl.Parent = listFrame
+    return lbl
 end
 
 local function createFriendRow(friendInfo)
@@ -273,7 +283,7 @@ local function createFriendRow(friendInfo)
     row.Parent = listFrame
 
     row.MouseEnter:Connect(function()
-        row.BackgroundColor3 = Color3.fromRGB(245, 245, 245)
+        row.BackgroundColor3 = Color3.fromRGB(247, 247, 250)
     end)
     row.MouseLeave:Connect(function()
         row.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
@@ -307,19 +317,47 @@ local function createFriendRow(friendInfo)
     return row
 end
 
+-- Adiciona (ou move pro topo, se já existia) alguém na lista de recentes
+local function addToRecents(friendInfo)
+    for i, existing in ipairs(recentSelections) do
+        if existing.UserId == friendInfo.UserId then
+            table.remove(recentSelections, i)
+            break
+        end
+    end
+    table.insert(recentSelections, 1, friendInfo)
+    if #recentSelections > 10 then
+        table.remove(recentSelections, #recentSelections)
+    end
+end
+
 local function renderFriendsList()
     clearList()
-    local shown = 0
+    local rows = 0
+
+    if #recentSelections > 0 then
+        createSectionLabel("Recentes")
+        rows += 1
+        for _, friendInfo in ipairs(recentSelections) do
+            createFriendRow(friendInfo)
+            rows += 1
+        end
+    end
+
+    createSectionLabel("Minhas amizades (" .. #allFriends .. ")")
+    rows += 1
     for _, friendInfo in ipairs(allFriends) do
         createFriendRow(friendInfo)
-        shown += 1
+        rows += 1
     end
-    listFrame.CanvasSize = UDim2.new(0, 0, 0, shown * 46)
+
+    listFrame.CanvasSize = UDim2.new(0, 0, 0, rows * 45)
 end
 
 -- Busca um usuário real do Roblox pelo nome EXATO digitado
 local function searchUserByName(name)
     clearList()
+    friendsTitle.Visible = true
     friendsTitle.Text = "Buscando..."
 
     local userId
@@ -333,9 +371,9 @@ local function searchUserByName(name)
         return
     end
 
+    friendsTitle.Visible = false
     createFriendRow({ Name = name, UserId = userId })
-    friendsTitle.Text = "Resultado da busca"
-    listFrame.CanvasSize = UDim2.new(0, 0, 0, 46)
+    listFrame.CanvasSize = UDim2.new(0, 0, 0, 44)
 end
 
 -- Debounce: espera parar de digitar antes de buscar (evita spam de requests)
@@ -344,7 +382,7 @@ searchBox:GetPropertyChangedSignal("Text"):Connect(function()
     local text = searchBox.Text
 
     if text == "" then
-        friendsTitle.Text = "Minhas amizades (" .. #allFriends .. ")"
+        friendsTitle.Visible = false
         renderFriendsList()
         return
     end
@@ -381,6 +419,12 @@ end)
 --============================================================
 onFriendSelected = function(friendInfo)
     print("Selecionado para trade: " .. friendInfo.Name .. " (" .. friendInfo.UserId .. ")")
+
+    addToRecents(friendInfo)
+    searchBox.Text = ""
+    friendsTitle.Visible = false
+    renderFriendsList()
+
     panel.Visible = false
 
     -- Exemplo: aqui você chamaria seu sistema real de trade,
