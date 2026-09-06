@@ -2,6 +2,10 @@ local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
+-- IDs dos ícones (no formato rbxassetid://ID)
+local ICON_TRADE = "rbxassetid://80446720359667" -- ícone ao lado de "Enviar trade"
+local ICON_COIN = "rbxassetid://0000000000" -- troque pelo ID do ícone da moeda quando mandar
+
 --============================================================
 -- ScreenGui base
 --============================================================
@@ -111,52 +115,119 @@ local sendButtonWasMoved = makeDraggable(sendButton)
 --============================================================
 local panel = Instance.new("Frame")
 panel.Name = "SearchPanel"
-panel.Size = UDim2.new(0, 340, 0, 420)
-panel.Position = UDim2.new(0.5, -170, 0.5, -210)
-panel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+panel.Size = UDim2.new(0, 340, 0, 460)
+panel.Position = UDim2.new(0.5, -170, 0.5, -230)
+panel.BackgroundColor3 = Color3.fromRGB(30, 31, 36)
 panel.BorderSizePixel = 0
 panel.Visible = false
 panel.Parent = screenGui
 Instance.new("UICorner", panel).CornerRadius = UDim.new(0, 12)
 
 local panelShadowStroke = Instance.new("UIStroke")
-panelShadowStroke.Color = Color3.fromRGB(225, 225, 225)
+panelShadowStroke.Color = Color3.fromRGB(55, 56, 62)
 panelShadowStroke.Thickness = 1
 panelShadowStroke.Parent = panel
 
--- Barra de arrastar no topo do painel
-local dragBar = Instance.new("Frame")
-dragBar.Name = "DragBar"
-dragBar.Size = UDim2.new(1, 0, 0, 28)
-dragBar.Position = UDim2.new(0, 0, 0, 0)
-dragBar.BackgroundTransparency = 1
-dragBar.Parent = panel
+--============================================================
+-- Header: ícone + "Enviar trade" | ícone moeda + valor | X
+--============================================================
+local header = Instance.new("Frame")
+header.Name = "Header"
+header.Size = UDim2.new(1, 0, 0, 48)
+header.Position = UDim2.new(0, 0, 0, 0)
+header.BackgroundTransparency = 1
+header.BorderSizePixel = 0
+header.Parent = panel
 
-local dragDots = Instance.new("TextLabel")
-dragDots.Size = UDim2.new(1, 0, 1, 0)
-dragDots.BackgroundTransparency = 1
-dragDots.Text = "⋯"
-dragDots.TextColor3 = Color3.fromRGB(180, 180, 180)
-dragDots.Font = Enum.Font.GothamBold
-dragDots.TextSize = 20
-dragDots.Rotation = 90
-dragDots.Parent = dragBar
+makeDraggable(panel, header)
 
-makeDraggable(panel, dragBar)
+local headerIcon = Instance.new("ImageLabel")
+headerIcon.Size = UDim2.new(0, 20, 0, 20)
+headerIcon.Position = UDim2.new(0, 16, 0.5, -10)
+headerIcon.BackgroundTransparency = 1
+headerIcon.Image = ICON_TRADE
+headerIcon.ImageColor3 = Color3.fromRGB(255, 255, 255)
+headerIcon.Parent = header
+
+local headerTitle = Instance.new("TextLabel")
+headerTitle.Size = UDim2.new(0, 160, 1, 0)
+headerTitle.Position = UDim2.new(0, 44, 0, 0)
+headerTitle.BackgroundTransparency = 1
+headerTitle.Text = "Enviar trade"
+headerTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+headerTitle.Font = Enum.Font.GothamBold
+headerTitle.TextSize = 17
+headerTitle.TextXAlignment = Enum.TextXAlignment.Left
+headerTitle.Parent = header
+
+-- Botão de fechar (X)
+local closeBtn = Instance.new("TextButton")
+closeBtn.Size = UDim2.new(0, 24, 0, 24)
+closeBtn.Position = UDim2.new(1, -34, 0.5, -12)
+closeBtn.BackgroundTransparency = 1
+closeBtn.Text = "X"
+closeBtn.Font = Enum.Font.GothamBold
+closeBtn.TextSize = 16
+closeBtn.TextColor3 = Color3.fromRGB(180, 180, 185)
+closeBtn.ZIndex = 3
+closeBtn.BorderSizePixel = 0
+closeBtn.Parent = header
+
+-- Botão com ícone de moeda + quantidade (clicável para editar)
+local coinButton = Instance.new("TextButton")
+coinButton.Size = UDim2.new(0, 76, 0, 26)
+coinButton.Position = UDim2.new(1, -118, 0.5, -13)
+coinButton.BackgroundColor3 = Color3.fromRGB(45, 46, 52)
+coinButton.AutoButtonColor = false
+coinButton.Text = ""
+coinButton.BorderSizePixel = 0
+coinButton.Parent = header
+Instance.new("UICorner", coinButton).CornerRadius = UDim.new(0, 8)
+
+local coinIcon = Instance.new("ImageLabel")
+coinIcon.Size = UDim2.new(0, 16, 0, 16)
+coinIcon.Position = UDim2.new(0, 8, 0.5, -8)
+coinIcon.BackgroundTransparency = 1
+coinIcon.Image = ICON_COIN
+coinIcon.Parent = coinButton
+
+-- Quantidade de moedas: TextBox para o jogador poder editar/alterar o valor
+local coinAmount = Instance.new("TextBox")
+coinAmount.Size = UDim2.new(1, -30, 1, 0)
+coinAmount.Position = UDim2.new(0, 28, 0, 0)
+coinAmount.BackgroundTransparency = 1
+coinAmount.Text = "10.169"
+coinAmount.TextColor3 = Color3.fromRGB(255, 255, 255)
+coinAmount.Font = Enum.Font.GothamBold
+coinAmount.TextSize = 14
+coinAmount.TextXAlignment = Enum.TextXAlignment.Left
+coinAmount.ClearTextOnFocus = false
+coinAmount.Parent = coinButton
+
+coinButton.MouseEnter:Connect(function()
+    coinButton.BackgroundColor3 = Color3.fromRGB(55, 56, 63)
+end)
+coinButton.MouseLeave:Connect(function()
+    coinButton.BackgroundColor3 = Color3.fromRGB(45, 46, 52)
+end)
+coinButton.MouseButton1Click:Connect(function()
+    coinAmount:CaptureFocus()
+end)
 
 -- Caixa de busca
 local searchBox = Instance.new("TextBox")
 searchBox.Size = UDim2.new(1, -32, 0, 40)
-searchBox.Position = UDim2.new(0, 16, 0, 32)
-searchBox.BackgroundColor3 = Color3.fromRGB(245, 246, 250)
+searchBox.Position = UDim2.new(0, 16, 0, 60)
+searchBox.BackgroundColor3 = Color3.fromRGB(42, 43, 49)
 searchBox.PlaceholderText = "Busca por nome de usuário"
-searchBox.PlaceholderColor3 = Color3.fromRGB(150, 150, 155)
+searchBox.PlaceholderColor3 = Color3.fromRGB(140, 140, 145)
 searchBox.Text = ""
-searchBox.TextColor3 = Color3.fromRGB(30, 30, 30)
+searchBox.TextColor3 = Color3.fromRGB(230, 230, 230)
 searchBox.Font = Enum.Font.Gotham
 searchBox.TextSize = 14
 searchBox.TextXAlignment = Enum.TextXAlignment.Left
 searchBox.ClearTextOnFocus = false
+searchBox.BorderSizePixel = 0
 searchBox.Parent = panel
 
 local searchPadding = Instance.new("UIPadding")
@@ -168,18 +239,18 @@ searchCorner.CornerRadius = UDim.new(0, 8)
 searchCorner.Parent = searchBox
 
 local searchStroke = Instance.new("UIStroke")
-searchStroke.Color = Color3.fromRGB(225, 226, 232)
+searchStroke.Color = Color3.fromRGB(60, 61, 68)
 searchStroke.Thickness = 1
 searchStroke.Parent = searchBox
 
 -- Mensagem de status da busca (só aparece durante/depois de uma busca)
 local friendsTitle = Instance.new("TextLabel")
 friendsTitle.Size = UDim2.new(1, -32, 0, 20)
-friendsTitle.Position = UDim2.new(0, 16, 0, 80)
+friendsTitle.Position = UDim2.new(0, 16, 0, 108)
 friendsTitle.BackgroundTransparency = 1
 friendsTitle.Text = ""
 friendsTitle.Visible = false
-friendsTitle.TextColor3 = Color3.fromRGB(120, 120, 120)
+friendsTitle.TextColor3 = Color3.fromRGB(150, 150, 155)
 friendsTitle.Font = Enum.Font.Gotham
 friendsTitle.TextSize = 13
 friendsTitle.TextXAlignment = Enum.TextXAlignment.Left
@@ -187,8 +258,8 @@ friendsTitle.Parent = panel
 
 -- Lista rolável de amigos
 local listFrame = Instance.new("ScrollingFrame")
-listFrame.Size = UDim2.new(1, -16, 1, -96)
-listFrame.Position = UDim2.new(0, 8, 0, 88)
+listFrame.Size = UDim2.new(1, -16, 1, -124)
+listFrame.Position = UDim2.new(0, 8, 0, 116)
 listFrame.BackgroundTransparency = 1
 listFrame.BorderSizePixel = 0
 listFrame.ScrollBarThickness = 4
@@ -198,18 +269,6 @@ listFrame.Parent = panel
 local listLayout = Instance.new("UIListLayout")
 listLayout.Padding = UDim.new(0, 2)
 listLayout.Parent = listFrame
-
--- Botão de fechar
-local closeBtn = Instance.new("TextButton")
-closeBtn.Size = UDim2.new(0, 24, 0, 24)
-closeBtn.Position = UDim2.new(1, -32, 0, 2)
-closeBtn.BackgroundTransparency = 1
-closeBtn.Text = "X"
-closeBtn.Font = Enum.Font.GothamBold
-closeBtn.TextSize = 16
-closeBtn.TextColor3 = Color3.fromRGB(120, 120, 120)
-closeBtn.ZIndex = 3
-closeBtn.Parent = panel
 
 --============================================================
 -- Carrega a lista de amigos reais do jogador (API do Roblox)
@@ -250,7 +309,6 @@ end
 -- Renderiza a lista (com filtro opcional de busca)
 --============================================================
 local onFriendSelected -- callback definido mais abaixo
-local recentSelections = {} -- pessoas que você já clicou nesta sessão
 
 local function clearList()
     for _, child in ipairs(listFrame:GetChildren()) do
@@ -278,6 +336,7 @@ local function createFriendRow(friendInfo)
     local row = Instance.new("TextButton")
     row.Size = UDim2.new(1, 0, 0, 44)
     row.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    row.BorderSizePixel = 0
     row.AutoButtonColor = false
     row.Text = ""
     row.Parent = listFrame
@@ -317,32 +376,9 @@ local function createFriendRow(friendInfo)
     return row
 end
 
--- Adiciona (ou move pro topo, se já existia) alguém na lista de recentes
-local function addToRecents(friendInfo)
-    for i, existing in ipairs(recentSelections) do
-        if existing.UserId == friendInfo.UserId then
-            table.remove(recentSelections, i)
-            break
-        end
-    end
-    table.insert(recentSelections, 1, friendInfo)
-    if #recentSelections > 10 then
-        table.remove(recentSelections, #recentSelections)
-    end
-end
-
 local function renderFriendsList()
     clearList()
     local rows = 0
-
-    if #recentSelections > 0 then
-        createSectionLabel("Recentes")
-        rows += 1
-        for _, friendInfo in ipairs(recentSelections) do
-            createFriendRow(friendInfo)
-            rows += 1
-        end
-    end
 
     createSectionLabel("Minhas amizades (" .. #allFriends .. ")")
     rows += 1
@@ -420,7 +456,6 @@ end)
 onFriendSelected = function(friendInfo)
     print("Selecionado para trade: " .. friendInfo.Name .. " (" .. friendInfo.UserId .. ")")
 
-    addToRecents(friendInfo)
     searchBox.Text = ""
     friendsTitle.Visible = false
     renderFriendsList()
